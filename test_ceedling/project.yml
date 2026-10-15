@@ -1,0 +1,88 @@
+---
+# ============================================================================
+#  Ceedling (1.x) - Pruebas automatizadas del módulo SoilSensor (Modbus RTU)
+#  Proyecto SMS - Sistema de Medición de Suelo / CESE - Testing de Software
+#
+#  Layout esperado del repositorio (ajustar :paths: si difiere):
+#    API/Inc/            headers  (soilModBus.h, uart_rs485.h, delay.h, ...)
+#    API/Src/            fuentes  (soilModBus.c, ...)
+#    test_ceedling/      <- este project.yml
+#       test/            tests Unity
+#       test/support/    stub de HAL para compilar en PC
+#
+#  Uso:   ceedling test:all            (corre todos los tests)
+#         ceedling test:test_soilModBus_integracion (SoilSensor + delay reales)
+#         ceedling gcov:test_soilModBus gcov:test_soilModBus_integracion  (cobertura -> build/artifacts/gcov/gcovr)
+# ============================================================================
+:project:
+  :name: "SMS - SoilSensor Modbus"
+  :which_ceedling: gem
+  :ceedling_version: '?'
+  :build_root: build
+  :use_mocks: TRUE
+  :use_test_preprocessor: :none
+  :use_backtrace: :simple
+  :test_file_prefix: test_
+  :default_tasks:
+    - test:all
+  :test_threads: 1
+  :compile_threads: 1
+
+:plugins:
+  :enabled:
+    - report_tests_pretty_stdout
+    - gcov
+
+:paths:
+  :test:
+    - +:test/**
+    - -:test/support
+  :source:
+    - ../API/Src
+  :include:
+    - ../API/Inc
+  :support:
+    - test/support
+
+:defines:
+  :test:
+    '*':
+      - TEST
+
+:flags:
+  :test:
+    :compile:
+      '*':
+        - -Wall
+        - -Wextra
+
+:cmock:
+  :mock_prefix: mock_
+  :when_no_prototypes: :warn
+  :enforce_strict_ordering: TRUE
+  :plugins:
+    - :ignore
+    - :callback
+    - :array
+    - :expect_any_args
+    - :return_thru_ptr
+  :treat_as:
+    bool_t:        UINT8
+    ent_t:         UINT8
+    tick_t:        UINT32
+    ticker_t:      UINT32
+    rs485status_t: INT
+    'UartRS485*':  PTR        # tipo opaco (struct incompleto): comparar solo el puntero
+    'delay_t*':    PTR
+    GPIO_PinState: INT
+
+:gcov:
+  :utilities:
+    - gcovr
+  :reports:
+    - HtmlDetailed
+    - Text
+  :gcovr:
+    :report_root: ".."                 # raíz del repo: las fuentes están en ../API/Src
+    :report_include: ".*soilModBus\\.c"  # medir SOLO el módulo bajo prueba
+...
